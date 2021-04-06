@@ -1,0 +1,50 @@
+import hudson.model.*
+import hudson.EnvVars
+import groovy.json.JsonSlurperClassic
+import groovy.json.JsonBuilder
+import groovy.json.JsonOutput
+import java.net.URL
+
+
+node{
+ stage('Checkout') {
+ git branch: 'main', url: 'https://github.com/Tapas-K/DigitalBank.git'
+    }
+ stage('Build') {
+ dir('') {
+     withMaven(maven: 'M3') {
+            sh 'mvn clean compile'
+            }
+        }
+    }
+ stage('Test') {
+ dir('') {
+     withMaven(maven: 'M3') {
+            sh 'mvn clean test'
+            }
+        }
+    } 
+stage('Package') {
+ dir('') {
+     withMaven(maven: 'M3') {
+            sh 'mvn clean package'
+            }
+        }
+    } 
+    
+stage ('DEV Approve')  {
+ echo "Taking approval from DEV Manager"     
+ timeout(time: 7, unit: 'DAYS') {
+ input message: 'Do you want to deploy?', submitter: 'admin'
+            }
+     }
+     
+stage('Deploy Containerized'){
+ dir('') {
+     withMaven(maven: 'M3') {
+		sh 'sudo docker build . -t tkandal/digitalbank'
+		sh 'sudo docker run -d -p 8087:8080 tkandal/digitalbank'
+            }
+ }
+}
+}// node
